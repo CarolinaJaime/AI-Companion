@@ -1,0 +1,166 @@
+.companion-container {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 400px;
+}
+
+.companion-header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.companion-avatar {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 15px;
+}
+
+.companion-face {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+  animation: float 3s ease-in-out infinite;
+}
+
+.companion-face:hover {
+  transform: scale(1.1);
+}
+
+.companion-face.happy {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.companion-face.encouraging {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.companion-face.concerned {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.speaking-indicator {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  font-size: 1.5rem;
+  animation: pulse-speak 1s infinite;
+}
+
+@keyframes pulse-speak {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+.companion-header h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.companion-status {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.companion-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 0;
+  max-height: 400px;
+}
+
+.companion-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.companion-messages::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.companion-messages::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.companion-messages::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.welcome-message {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border-radius: 15px;
+  text-align: center;
+  color: #555;
+}
+
+.welcome-message p {
+  margin: 10px 0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.message-bubble {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 18px;
+  margin-bottom: 15px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-bubble p {
+  margin: 0;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.message-time {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-top: 8px;
+}
+
