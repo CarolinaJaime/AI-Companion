@@ -107,3 +107,5 @@ function FocusMeter({ focusScore, isFocused, sessionDuration }) {
 
 export default FocusMeter;
 
+
+
