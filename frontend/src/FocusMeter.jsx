@@ -1,3 +1,4 @@
+// Note: May not be displaying focus meter
 import React, { useEffect, useState } from 'react';
 import './FocusMeter.css';
 
