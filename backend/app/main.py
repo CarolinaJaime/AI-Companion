@@ -2,17 +2,21 @@ import os
 import asyncio
 from typing import AsyncGenerator
 
+from dotenv import dotenv_values
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from dotenv import load_dotenv
 
 # Gemini
 from google import genai
 from google.genai import types
 
-load_dotenv()
+# Gemini client
+env = dotenv_values(".env")
+API_KEY = env.get("GEMINI_API_KEY")
+client = genai.Client(api_key=API_KEY)
+
 app = FastAPI(title="AI Companion API")
 
 class ChatRequest(BaseModel):
@@ -21,17 +25,10 @@ class ChatRequest(BaseModel):
     system_prompt: str | None = None
     model: str = "gemini-2.5-flash"
 
-# Gemini client
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise RuntimeError("Missing GEMINI_API_KEY")
-
-client = genai.Client(api_key=GEMINI_API_KEY)
-
 def sse(data: str) -> str:
     return f"data: {data}\n\n"
 
-# femini response
+# gemini response
 async def gemini_stream_text(
     model: str,
     contents: list[str],
@@ -43,18 +40,17 @@ async def gemini_stream_text(
     """
     gen_cfg = None
     if system_prompt:
-        gen_cfg = types.GenerateContentConfig(system_instruction=system_prompt)
+        gen_cfg = types.GenerateContentConfig(system_instruction=system_prompt) if system_prompt else None
 
     stream = client.models.generate_content_stream(
         model=model,
         contents=contents,
-        generation_config=gen_cfg,
+        config=gen_cfg,
     )
     # Iterate SDK stream and yield text fragments
     for chunk in stream:
         if getattr(chunk, "text", None):
             yield chunk.text
-
 
 @app.get("/health")
 def health():
