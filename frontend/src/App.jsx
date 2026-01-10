@@ -1,3 +1,4 @@
+// Main App component
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Companion from './Companion';
@@ -5,6 +6,7 @@ import FocusMeter from './FocusMeter';
 import Pomodoro from './Pomodoro';
 import wsService from '../services/websocket';
 
+// State management
 function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [focusData, setFocusData] = useState({
@@ -21,24 +23,27 @@ function App() {
   });
 
   useEffect(() => {
-    // Connect WebSocket
+    // Connect WebSocket 
     wsService.connect();
 
-    // Set up event listeners
+    // Update connection status
     const handleConnected = () => setIsConnected(true);
     const handleDisconnected = () => setIsConnected(false);
     
+    // Handle WebSocket messages
     const handleMessage = (data) => {
+      console.log('Received message:', data);
+      
       // Handle focus detection updates
       if (data.focus !== undefined) {
         setFocusData(prev => ({
-          ...prev,
+          ...prev, // Preserve existing state
           isFocused: data.focus,
-          focusScore: data.focus_score || prev.focusScore,
+          focusScore: data.focus_score || prev.focusScore, // Fallback to previous score if not provided
         }));
       }
 
-      // Handle focus score updates
+      // Handle focus score updates (alternative path)
       if (data.focus_score !== undefined) {
         setFocusData(prev => ({
           ...prev,
@@ -68,6 +73,7 @@ function App() {
       }
     };
 
+    // Register event listeners
     wsService.on('connected', handleConnected);
     wsService.on('disconnected', handleDisconnected);
     wsService.on('message', handleMessage);
@@ -75,7 +81,7 @@ function App() {
     wsService.on('pomodoro_update', handleMessage);
     wsService.on('ai_message', handleMessage);
 
-    // Cleanup
+    // Cleanup event listeners
     return () => {
       wsService.off('connected', handleConnected);
       wsService.off('disconnected', handleDisconnected);
@@ -86,18 +92,22 @@ function App() {
     };
   }, []);
 
+  // Pomodoro control handlers
   const handleStartPomodoro = () => {
     wsService.send({ action: 'start_pomodoro' });
   };
 
+  // Stop Pomodoro
   const handleStopPomodoro = () => {
     wsService.send({ action: 'stop_pomodoro' });
   };
 
+  // Reset Pomodoro
   const handleResetPomodoro = () => {
     wsService.send({ action: 'reset_pomodoro' });
   };
 
+  // Render the main app UI
   return (
     <div className="app">
       <div className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
@@ -138,4 +148,6 @@ function App() {
 }
 
 export default App;
+
+
 
