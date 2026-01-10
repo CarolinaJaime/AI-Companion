@@ -52,6 +52,23 @@
   background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 }
 
+.companion-face.sleeping {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  animation: sleep 2s ease-in-out infinite;
+}
+
+@keyframes sleep {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-5px) rotate(-2deg);
+  }
+  75% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);
@@ -67,6 +84,12 @@
   right: -5px;
   font-size: 1.5rem;
   animation: pulse-speak 1s infinite;
+}
+
+.companion-avatar-simple .speaking-indicator {
+  font-size: 2.5rem;
+  top: 10px;
+  right: 10px;
 }
 
 @keyframes pulse-speak {
@@ -162,6 +185,32 @@
   font-size: 0.75rem;
   opacity: 0.8;
   margin-top: 8px;
+}
+
+/* Simplified companion view for main study screen */
+.companion-container-simple {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 500px;
+  height: 500px;
+  margin: 0 auto;
+}
+
+.companion-avatar-simple {
+  position: relative;
+  display: inline-block;
+}
+
+.companion-avatar-simple .companion-face {
+  width: 420px;
+  height: 420px;
+  font-size: 10rem;
 }
 
 
