@@ -1,7 +1,5 @@
-import os
 import asyncio
 from typing import AsyncGenerator
-
 from app.config import Settings
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,8 +12,8 @@ from google.genai import types
 
 # Gemini client
 client = genai.Client(api_key=Settings.GEMINI_API_KEY)
-
 app = FastAPI(title="AI Companion API")
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -24,6 +22,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # request models
 class ChatRequest(BaseModel):
     session_id: str

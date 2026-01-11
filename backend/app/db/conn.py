@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from contextlib import contextmanager
 from app.config import Settings
 
+
 # Use SSL with Supabase; connection pooling is fine for FastAPI
 engine = create_engine(
     Settings.DATABASE_URL,

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, Text, ForeignKey, Enum as SQLEnum, Time
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, Text, ForeignKey, Enum as SQLEnum, Time, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -17,12 +17,11 @@ class MessageRole(enum.Enum):
 class SessionStatus(enum.Enum):
     ACTIVE = "ACTIVE"
     COMPLETED = "COMPLETED"
-    ABORTED = "ABORTED"
+    PAUSED = "PAUSED"
 
 class PomodoroPhase(enum.Enum):
     WORK = "WORK"
     BREAK = "BREAK"
-
 
 # == Models
 class Client(Base):
@@ -30,25 +29,63 @@ class Client(Base):
     
     client_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     client_name = Column(String(20))
-    
-    # Relationships
-    chat_history = relationship("ChatHistory", back_populates="client")
 
+    chat_history = relationship(
+            "ChatHistory",
+            back_populates="client",
+            foreign_keys="ChatHistory.client_id",
+            cascade="all, delete-orphan",
+        )
+    
+    sessions = relationship(
+            "Session",
+            back_populates="client",
+            foreign_keys="Session.client_id",
+            cascade="all, delete-orphan",
+        )
+
+
+    
 class Session(Base):
     __tablename__ = 'session'
     
     session_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    duration = Column(Time)
+    client_id = Column(UUID(as_uuid=True), ForeignKey('client.client_id'), nullable=False)
     session_topic = Column(Text)
+    duration = Column(Time)
     status = Column(SQLEnum(SessionStatus, name='session_status'), default=SessionStatus.ACTIVE)
     created_at = Column(DateTime(timezone=True))
     completed_at = Column(DateTime(timezone=True), nullable=True)
 
+    # attention summary 
+    focused_seconds = Column(Integer, nullable=True)
+    distracted_seconds = Column(Integer, nullable=True)
+    avg_attention = Column(Float, nullable=True)   # 0..100 average
+    samples_count = Column(Integer, nullable=True)
+
     # Relationships
-    chat_history = relationship("ChatHistory", back_populates="session")
-    plan = relationship("Plan", back_populates="session", uselist=False)
-    pomodoro_cycles = relationship("PomodoroCycle", back_populates="session")
-    telemetry_events = relationship("TelemetryEvent", back_populates="session")
+    client = relationship("Client", back_populates="sessions", foreign_keys=[client_id])
+    chat_history = relationship(
+        "ChatHistory",
+        back_populates="session",
+        cascade="all, delete-orphan",
+    )
+    plan = relationship(
+        "Plan",
+        back_populates="session",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    pomodoro_cycles = relationship(
+        "PomodoroCycle",
+        back_populates="session",
+        cascade="all, delete-orphan",
+    )
+    telemetry_events = relationship(
+        "TelemetryEvent",
+        back_populates="session",
+        cascade="all, delete-orphan",
+    )
 
 class ChatHistory(Base):
     __tablename__ = 'chathistory'
@@ -58,11 +95,11 @@ class ChatHistory(Base):
     role = Column(SQLEnum(MessageRole, name='message_role'))
     session_id = Column(UUID(as_uuid=True), ForeignKey('session.session_id'))
     chat_log = Column(Text)
-    
-    # Relationships
-    client = relationship("Client", back_populates="chat_history")
-    session = relationship("Session", back_populates="chat_history")    
 
+    # Relationships
+    client = relationship("Client", back_populates="chat_history", foreign_keys=[client_id])
+    session = relationship("Session", back_populates="chat_history")
+    
 class Plan(Base):
     __tablename__ = 'plans'
     
