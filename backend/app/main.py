@@ -2,7 +2,7 @@ import os
 import asyncio
 from typing import AsyncGenerator
 
-from dotenv import dotenv_values
+from app.config import Settings
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -13,12 +13,18 @@ from google import genai
 from google.genai import types
 
 # Gemini client
-env = dotenv_values(".env")
-API_KEY = env.get("GEMINI_API_KEY")
-client = genai.Client(api_key=API_KEY)
+client = genai.Client(api_key=Settings.GEMINI_API_KEY)
 
 app = FastAPI(title="AI Companion API")
-
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure properly for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# request models
 class ChatRequest(BaseModel):
     session_id: str
     message: str
@@ -47,6 +53,7 @@ async def gemini_stream_text(
         contents=contents,
         config=gen_cfg,
     )
+    
     # Iterate SDK stream and yield text fragments
     for chunk in stream:
         if getattr(chunk, "text", None):
@@ -60,14 +67,7 @@ def health():
 def echo(data: dict):
     return {"received": data}
 
-@app.get("/sse-test")
-async def sse_test():
-    async def events():
-        for i in range(5):
-            yield f"data: tick {i}\n\n"
-            await asyncio.sleep(0.3)
-        yield "data: [DONE]\n\n"
-    return StreamingResponse(events(), media_type="text/event-stream")
+#client
 
 @app.post("/chat/stream")
 async def chat_stream(req: ChatRequest, authorization: str | None = Header(default=None)):
