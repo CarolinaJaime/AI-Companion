@@ -8,6 +8,27 @@ function Pomodoro({ state, onStart, onStop, onReset }) {
     setDisplayTime(state.timeRemaining);
   }, [state.timeRemaining]);
 
+  // Countdown logic
+  useEffect(() => {
+    let interval = null;
+    
+    if (state.isRunning && displayTime > 0) {
+      interval = setInterval(() => {
+        setDisplayTime((prevTime) => {
+          if (prevTime <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prevTime - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [state.isRunning, displayTime]);
+
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -16,7 +37,7 @@ function Pomodoro({ state, onStart, onStop, onReset }) {
 
   const getProgress = () => {
     const totalTime = state.isBreak ? 5 * 60 : 25 * 60;
-    return ((totalTime - state.timeRemaining) / totalTime) * 100;
+    return ((totalTime - displayTime) / totalTime) * 100;
   };
 
   const getPhaseLabel = () => {
@@ -59,6 +80,3 @@ function Pomodoro({ state, onStart, onStop, onReset }) {
 }
 
 export default Pomodoro;
-
-
-
