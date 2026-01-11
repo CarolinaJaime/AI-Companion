@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import './Onboarding.css';
 
 function Onboarding({ onComplete }) {
+
+  // Allow parent to open customization page
+  // onCustomize will be provided by parent when available
+  const onCustomize = arguments[0].onCustomize;
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     subject: '',
@@ -304,6 +308,11 @@ function Onboarding({ onComplete }) {
             </button>
           )}
         </div>
+
+        {/* Customize button bottom-right */}
+        <button className="customize-button" onClick={() => onCustomize && onCustomize()}>
+          <img src="/images/customize.png" alt="Customize" className="customize-img" />
+        </button>
       </div>
     </div>
   );

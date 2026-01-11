@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Onboarding from './Onboarding';
+import Customization from './Customization';
 import Companion from './Companion';
 import Pomodoro from './Pomodoro';
 import wsService from './services/websocket';
@@ -9,6 +10,7 @@ import wsService from './services/websocket';
 // State management
 function App() {
   const [isOnboarding, setIsOnboarding] = useState(true);
+  const [isCustomizing, setIsCustomizing] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [sessionData, setSessionData] = useState(null);
   const [focusData, setFocusData] = useState({
@@ -125,7 +127,10 @@ function App() {
 
   // Show onboarding first
   if (isOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
+    if (isCustomizing) {
+      return <Customization onClose={() => setIsCustomizing(false)} />;
+    }
+    return <Onboarding onComplete={handleOnboardingComplete} onCustomize={() => setIsCustomizing(true)} />;
   }
 
   // Render the main app UI
