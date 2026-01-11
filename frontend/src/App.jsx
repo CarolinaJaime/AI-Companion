@@ -1,14 +1,16 @@
 // Main App component
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import Onboarding from './Onboarding';
 import Companion from './Companion';
-import FocusMeter from './FocusMeter';
 import Pomodoro from './Pomodoro';
-import wsService from '../services/websocket';
+import wsService from './services/websocket';
 
 // State management
 function App() {
+  const [isOnboarding, setIsOnboarding] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  const [sessionData, setSessionData] = useState(null);
   const [focusData, setFocusData] = useState({
     isFocused: false,
     focusScore: 0,
@@ -21,76 +23,90 @@ function App() {
     timeRemaining: 25 * 60,
     cycle: 0,
   });
+  const [currentTask, setCurrentTask] = useState('');
 
   useEffect(() => {
-    // Connect WebSocket 
-    wsService.connect();
+    // Connect WebSocket only after onboarding
+    if (!isOnboarding) {
+      wsService.connect();
 
-    // Update connection status
-    const handleConnected = () => setIsConnected(true);
-    const handleDisconnected = () => setIsConnected(false);
-    
-    // Handle WebSocket messages
-    const handleMessage = (data) => {
-      console.log('Received message:', data);
+      // Update connection status
+      const handleConnected = () => setIsConnected(true);
+      const handleDisconnected = () => setIsConnected(false);
       
-      // Handle focus detection updates
-      if (data.focus !== undefined) {
-        setFocusData(prev => ({
-          ...prev, // Preserve existing state
-          isFocused: data.focus,
-          focusScore: data.focus_score || prev.focusScore, // Fallback to previous score if not provided
-        }));
-      }
+      // Handle WebSocket messages
+      const handleMessage = (data) => {
+        console.log('Received message:', data);
+        
+        // Handle focus detection updates
+        if (data.focus !== undefined) {
+          setFocusData(prev => ({
+            ...prev, // Preserve existing state
+            isFocused: data.focus,
+            focusScore: data.focus_score || prev.focusScore, // Fallback to previous score if not provided
+          }));
+        }
 
-      // Handle focus score updates (alternative path)
-      if (data.focus_score !== undefined) {
-        setFocusData(prev => ({
-          ...prev,
-          focusScore: data.focus_score,
-        }));
-      }
+        // Handle focus score updates (alternative path)
+        if (data.focus_score !== undefined) {
+          setFocusData(prev => ({
+            ...prev,
+            focusScore: data.focus_score,
+          }));
+        }
 
-      // Handle session duration
-      if (data.session_duration !== undefined) {
-        setFocusData(prev => ({
-          ...prev,
-          sessionDuration: data.session_duration,
-        }));
-      }
+        // Handle session duration
+        if (data.session_duration !== undefined) {
+          setFocusData(prev => ({
+            ...prev,
+            sessionDuration: data.session_duration,
+          }));
+        }
 
-      // Handle AI companion messages
-      if (data.message) {
-        setCompanionMessage(data.message);
-      }
+        // Handle AI companion messages
+        if (data.message) {
+          setCompanionMessage(data.message);
+        }
 
-      // Handle Pomodoro updates
-      if (data.pomodoro) {
-        setPomodoroState(prev => ({
-          ...prev,
-          ...data.pomodoro,
-        }));
-      }
-    };
+        // Handle Pomodoro updates
+        if (data.pomodoro) {
+          setPomodoroState(prev => ({
+            ...prev,
+            ...data.pomodoro,
+          }));
+        }
 
-    // Register event listeners
-    wsService.on('connected', handleConnected);
-    wsService.on('disconnected', handleDisconnected);
-    wsService.on('message', handleMessage);
-    wsService.on('focus_update', handleMessage);
-    wsService.on('pomodoro_update', handleMessage);
-    wsService.on('ai_message', handleMessage);
+        // Handle current task updates
+        if (data.current_task) {
+          setCurrentTask(data.current_task);
+        }
+      };
 
-    // Cleanup event listeners
-    return () => {
-      wsService.off('connected', handleConnected);
-      wsService.off('disconnected', handleDisconnected);
-      wsService.off('message', handleMessage);
-      wsService.off('focus_update', handleMessage);
-      wsService.off('pomodoro_update', handleMessage);
-      wsService.off('ai_message', handleMessage);
-    };
-  }, []);
+      // Register event listeners
+      wsService.on('connected', handleConnected);
+      wsService.on('disconnected', handleDisconnected);
+      wsService.on('message', handleMessage);
+      wsService.on('focus_update', handleMessage);
+      wsService.on('pomodoro_update', handleMessage);
+      wsService.on('ai_message', handleMessage);
+
+      // Cleanup event listeners
+      return () => {
+        wsService.off('connected', handleConnected);
+        wsService.off('disconnected', handleDisconnected);
+        wsService.off('message', handleMessage);
+        wsService.off('focus_update', handleMessage);
+        wsService.off('pomodoro_update', handleMessage);
+        wsService.off('ai_message', handleMessage);
+      };
+    }
+  }, [isOnboarding]);
+
+  const handleOnboardingComplete = (data) => {
+    setSessionData(data);
+    setCurrentTask(data.currentTask || '');
+    setIsOnboarding(false);
+  };
 
   // Pomodoro control handlers
   const handleStartPomodoro = () => {
@@ -107,6 +123,11 @@ function App() {
     wsService.send({ action: 'reset_pomodoro' });
   };
 
+  // Show onboarding first
+  if (isOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
+
   // Render the main app UI
   return (
     <div className="app">
@@ -116,25 +137,20 @@ function App() {
       </div>
 
       <header className="app-header">
-        <h1>🐾 Puffle</h1>
-        <p>Your AI-Powered Study Companion</p>
+        <h2 className="current-task-title">{currentTask || 'Ready to start!'}</h2>
       </header>
 
-      <div className="app-content">
-        <div className="app-main">
+      <div className="app-content-simple">
+        <div className="app-left">
           <Companion 
             message={companionMessage}
             focusScore={focusData.focusScore}
             isFocused={focusData.isFocused}
-          />
-          <FocusMeter 
-            focusScore={focusData.focusScore}
-            isFocused={focusData.isFocused}
-            sessionDuration={focusData.sessionDuration}
+            isBreak={pomodoroState.isBreak}
           />
         </div>
 
-        <div className="app-sidebar">
+        <div className="app-right">
           <Pomodoro
             state={pomodoroState}
             onStart={handleStartPomodoro}
