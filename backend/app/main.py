@@ -1,4 +1,6 @@
 import asyncio
+import uuid
+import asyncio
 from typing import AsyncGenerator
 from app.config import Settings
 from fastapi import FastAPI, Header, HTTPException
@@ -24,7 +26,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# In-memory store for study sessions
+study_sessions = {}
+
 # request models
+# ADD these new request models after your existing ones:
+class SessionStart(BaseModel):
+    session_topic: str
+
+class AttentionSummary(BaseModel):
+    focused_seconds: int
+    distracted_seconds: int
+    avg_attention: float
+    samples_count: int
+
 class ChatRequest(BaseModel): # for /chat/stream
     session_id: str
     message: str
@@ -229,3 +244,28 @@ async def end_study_session(
         'session_id': req.session_id,
         'music_result': music_result
     }
+
+@app.post("/sessions/start")
+async def start_session(req: SessionStart):
+    """Start an attention detection session"""
+    session_id = str(uuid.uuid4())
+    
+    study_sessions[session_id] = {
+        'session_id': session_id,
+        'session_topic': req.session_topic,
+        'start_time': asyncio.get_event_loop().time(),
+        'attention_data': None
+    }
+    
+    return {"session_id": session_id, "message": "Session started"}
+
+@app.post("/sessions/attention-summary")
+async def receive_attention_summary(req: AttentionSummary):
+    """Receive attention detection summary"""
+    print(f"\n📊 Attention Summary Received:")
+    print(f"  Focused: {req.focused_seconds}s")
+    print(f"  Distracted: {req.distracted_seconds}s")
+    print(f"  Avg Attention: {req.avg_attention:.1f}%")
+    print(f"  Samples: {req.samples_count}")
+    
+    return {"status": "success", "message": "Summary received"}

@@ -29,6 +29,10 @@ class AttentionDetector:
         self.last_print_time = 0
         self.detection_start_time = 0
         self.last_frame_time = 0
+
+
+        self.api_base = "http://localhost:8000"  # FastAPI backend URL
+        self.current_session_id = None
         
         # OpenCV classifiers
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -422,7 +426,7 @@ class AttentionDetector:
 
 def main():
     root = tk.Tk()
-    app = AttentionDetector(root, api_base="http://localhost:8000")
+    app = AttentionDetector(root)
     app.run()
 
 if __name__ == "__main__":
