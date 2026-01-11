@@ -9,6 +9,7 @@ backend/venv/
 backend/.env
 backend/__pycache__/
 backend/*.pyc
+backend/google_assistant_credentials.json
 
 # OS
 .DS_Store
@@ -18,3 +19,5 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+venv_system/

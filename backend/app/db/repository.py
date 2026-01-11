@@ -11,15 +11,10 @@ from app.models import (Client, Session as SessionModel, ChatHistory, Plan,
 
 class ClientRepository:
     """Database operations for Client"""
-    
     @staticmethod
     def get_by_id(db: Session, client_id: uuid.UUID) -> Optional[Client]:
         return db.query(Client).filter(Client.client_id == client_id).first()
-    
-    @staticmethod
-    def get_by_name(db: Session, client_name: str) -> Optional[Client]:
-        return db.query(Client).filter(Client.client_name == client_name).first()
-    
+
     @staticmethod
     def create(db: Session, client_id: Optional[uuid.UUID] = None, client_name: str = None) -> Client:
         client = Client(
@@ -32,16 +27,11 @@ class ClientRepository:
     
 class SessionRepository:
     """Database operations for Session"""
-    
     @staticmethod
-    def get_by_id(db: Session, session_id: uuid.UUID) -> Optional[SessionModel]:
-        return db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
-    
-    @staticmethod
-    def create(db: Session, session_topic: str, status: SessionStatus = SessionStatus.ACTIVE) -> SessionModel:
+    def create(db: Session, client_id: uuid.UUID,session_topic: str, status: SessionStatus = SessionStatus.ACTIVE) -> SessionModel:
         session = SessionModel(
-            session_topic=session_topic,
-            status=status,
+            client_id=client_id,
+            status=status.ACTIVE,
             created_at=datetime.utcnow()
         )
         db.add(session)
@@ -49,36 +39,48 @@ class SessionRepository:
         return session
     
     @staticmethod
-    def complete(db: Session, session_id: uuid.UUID) -> SessionModel:
+    def get_current_active(db: Session) -> Optional[SessionModel]:
+        return db.query(SessionModel)\
+                 .filter(SessionModel.status == SessionStatus.ACTIVE)\
+                 .order_by(desc(SessionModel.created_at))\
+                 .first()
+
+    @staticmethod
+    def get_by_id(db: Session, session_id: uuid.UUID) -> Optional[SessionModel]:
+        return db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
+
+    @staticmethod
+    def save_session_attention_summary(
+        db: Session,
+        session_id: uuid.UUID,
+        focused_seconds: int,
+        distracted_seconds: int,
+        avg_attention: float,
+        samples_count: int,
+    ) -> Optional[SessionModel]:
         session = SessionRepository.get_by_id(db, session_id)
         if not session:
             return None
-        
-        session.status = SessionStatus.COMPLETED
-        session.completed_at = datetime.utcnow()
-         # Calculate duration
-        if session.created_at:
-            duration_seconds = int((session.completed_at - session.created_at).total_seconds())
-            hours = duration_seconds // 3600
-            minutes = (duration_seconds % 3600) // 60
-            seconds = duration_seconds % 60
-            session.duration = dt_time(hour=hours, minute=minutes, second=seconds)
-        
+
+        session.focused_seconds = focused_seconds
+        session.distracted_seconds = distracted_seconds
+        session.avg_attention = avg_attention
+        session.samples_count = samples_count
+
         db.flush()
         return session
-    
-    @staticmethod
-    def abort(db: Session, session_id: uuid.UUID) -> SessionModel:
-        session = SessionRepository.get_by_id(db, session_id)
-        if session:
-            session.status = SessionStatus.ABORTED
-            session.completed_at = datetime.utcnow()
-            db.flush()
-        return session
+
+    # @staticmethod
+    # def abort(db: Session, session_id: uuid.UUID) -> SessionModel:
+    #     session = SessionRepository.get_by_id(db, session_id)
+    #     if session:
+    #         session.status = SessionStatus.ABORTED
+    #         session.completed_at = datetime.utcnow()
+    #         db.flush()
+    #     return session
     
 class PlanRepository:
     """Database operations for Plan"""
-    
     @staticmethod
     def create(db: Session, session_id: uuid.UUID, pomodoro_pattern: str, qualitative_guide: str) -> Plan:
         plan = Plan(
@@ -122,7 +124,7 @@ class PomodoroCycleRepository:
         current = db.query(PomodoroCycle).filter(PomodoroCycle.cycle_id == cycle_id).first()
         if current:
             current.completed = True
-            current.ends_at = datetime.utcnow()
+            current.ended_at = datetime.utcnow()
         
         # Start next
         next_cycle = PomodoroCycleRepository.create(db, session_id, next_phase, next_minutes)
